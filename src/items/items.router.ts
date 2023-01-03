@@ -4,7 +4,7 @@
 
 import express, {Request, Response} from "express";
 import * as ItemService from "./items.service";
-import { BaseItem, Item } from "./item.interface";
+import { Item } from "@prisma/client";
 
 /**
  * Router Definition
@@ -35,7 +35,7 @@ itemsRouter.get('/:id', async (req: Request, res: Response) => {
 
   try {
     const id: number = parseInt(req.params.id, 10);
-    const item: Item = await ItemService.find(id);
+    const item: Item|null = await ItemService.find(id);
 
     if(item) {
       return res.status(200).json(item);
@@ -52,9 +52,9 @@ itemsRouter.get('/:id', async (req: Request, res: Response) => {
 
 itemsRouter.post('/', async (req: Request, res: Response) => {
   try {
-    const item: BaseItem = req.body;
+    const {name, price, description, image} = req.body;
 
-    const newItem: Item = await ItemService.create(item);
+    const newItem: Item = await ItemService.create(name, price, description, image);
 
     return res.status(201).json(newItem);
 
@@ -69,18 +69,17 @@ itemsRouter.put('/:id', async(req: Request, res: Response) => {
 
   try {
     const id: number = parseInt(req.params.id, 10);
-    const itemUpdate: BaseItem = req.body;
+    const {name, price, description, image} = req.body;
 
-    const existingItem: Item = await ItemService.find(id);
+    const existingItem: Item|null = await ItemService.find(id);
 
     if(existingItem) {
-      const updatedItem = await ItemService.update(id, itemUpdate);
+      const updatedItem = await ItemService.update(id, name, price, description, image);
       return res.status(200).json(updatedItem);
     }
 
-    const newItem = await ItemService.create(itemUpdate);
-    return res.status(201).json(newItem);
-    
+    return res.status(404).send("item not found");
+
   } catch (error: any) {
     return res.status(500).send(error.message);
   }
@@ -95,8 +94,14 @@ itemsRouter.delete("/:id", async(req: Request, res: Response) => {
   try {
     const id: number = parseInt(req.params.id, 10)
 
-    await ItemService.remove(id);
-    return res.sendStatus(204);
+    const existingItem: Item|null = await ItemService.find(id);
+
+    if(existingItem) {
+      await ItemService.remove(id);
+      return res.sendStatus(204);
+    }
+
+    return res.status(404).send("item not found");
 
   } catch (error: any) {
     return res.status(500).send(error.message);
