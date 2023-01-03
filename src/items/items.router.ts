@@ -5,6 +5,7 @@
 import express, {Request, Response} from "express";
 import * as ItemService from "./items.service";
 import { Item } from "@prisma/client";
+import * as itemValidator from "./items.validator"
 
 /**
  * Router Definition
@@ -50,7 +51,7 @@ itemsRouter.get('/:id', async (req: Request, res: Response) => {
 
 // POST items
 
-itemsRouter.post('/', async (req: Request, res: Response) => {
+itemsRouter.post('/', itemValidator.itemSchema, itemValidator.itemCheck, async (req: Request, res: Response) => {
   try {
     const {name, price, description, image} = req.body;
 
@@ -65,7 +66,7 @@ itemsRouter.post('/', async (req: Request, res: Response) => {
 
 // PUT items/:id
 
-itemsRouter.put('/:id', async(req: Request, res: Response) => {
+itemsRouter.put('/:id', itemValidator.itemSchema, itemValidator.itemCheck, async(req: Request, res: Response) => {
 
   try {
     const id: number = parseInt(req.params.id, 10);
